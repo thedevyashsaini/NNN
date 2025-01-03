@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drawing Grid</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(10, 30px);
+      grid-template-rows: repeat(10, 30px);
+      gap: 2px;
+    }
+
+    .cell {
+      width: 30px;
+      height: 30px;
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+
+    .cell.active {
+      background-color: #333;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .vector {
+      margin-top: 20px;
+      white-space: pre-wrap;
+    }
+
+    button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: repeat(10, 20px);
+        grid-template-rows: repeat(10, 20px);
+      }
+
+      .cell {
+        width: 20px;
+        height: 20px;
+      }
+
+      button {
+        padding: 8px 12px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>10x10 Drawing Grid</h1>
+  <div class="grid" id="grid"></div>
+  <div class="buttons">
+    <button id="clear">Clear Grid</button>
+    <button id="download">Download Dataset</button>
+  </div>
+  <div class="buttons" id="numberButtons" style="display: none;"></div>
+  <div class="vector" id="vector"></div>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const vectorDiv = document.getElementById('vector');
+    const clearButton = document.getElementById('clear');
+    const downloadButton = document.getElementById('download');
+    const numberButtonsDiv = document.getElementById('numberButtons');
+
+    const gridState = Array(100).fill(0);
+    let isDrawing = false;
+    let dataset = [];
+
+    function updateVectorDisplay() {
+      vectorDiv.textContent = `[ ${gridState.join(', ')} ]`;
+      toggleNumberButtons();
+    }
+
+    function toggleNumberButtons() {
+      if (gridState.some(value => value === 1)) {
+        numberButtonsDiv.style.display = 'flex';
+      } else {
+        numberButtonsDiv.style.display = 'none';
+      }
+    }
+
+    function createGrid() {
+      for (let i = 0; i < 100; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.addEventListener('mousedown', () => {
+          isDrawing = true;
+          toggleCellState(cell, i);
+        });
+        cell.addEventListener('mouseover', () => {
+          if (isDrawing) {
+            toggleCellState(cell, i);
+          }
+        });
+        cell.addEventListener('mouseup', () => {
+          isDrawing = false;
+        });
+        grid.appendChild(cell);
+      }
+    }
+
+    function toggleCellState(cell, index) {
+      gridState[index] = 1;
+      cell.classList.add('active');
+      updateVectorDisplay();
+    }
+
+    function createNumberButtons() {
+      for (let i = 0; i <= 9; i++) {
+        const button = document.createElement('button');
+        button.textContent = i;
+        button.addEventListener('click', () => saveDrawing(i));
+        numberButtonsDiv.appendChild(button);
+      }
+    }
+
+    function saveDrawing(label) {
+      dataset.push({ label, data: [...gridState] });
+      alert(`Saved drawing for digit ${label}. Total samples: ${dataset.length}`);
+      clearGrid();
+    }
+
+    function clearGrid() {
+      gridState.fill(0);
+      const cells = document.querySelectorAll('.cell');
+      cells.forEach(cell => cell.classList.remove('active'));
+      updateVectorDisplay();
+    }
+
+    function downloadDataset() {
+      const blob = new Blob([JSON.stringify(dataset, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'handwritten_digits_dataset.json';
+      link.click();
+    }
+
+    clearButton.addEventListener('click', clearGrid);
+    downloadButton.addEventListener('click', downloadDataset);
+
+    document.body.addEventListener('mouseup', () => {
+      isDrawing = false;
+    });
+
+    createGrid();
+    createNumberButtons();
+    updateVectorDisplay();
+  </script>
+</body>
+</html>
